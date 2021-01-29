@@ -1,0 +1,227 @@
+#+TITLE: Emacs configuration file
+#+AUTHOR: Nguyen Tien Hai
+#+BABEL: :cache yes
+#+PROPERTY: header-args :tangle ~/.emacs.d/init.el 
+#+BEGIN_SRC emacs-lisp
+;;; -*- lexical-binding: t -*-
+#+END_SRC
+
+* Initialize the configuration
+** Tangle & byte compile
+
+Tangle and byte compile
+
+#+BEGIN_SRC emacs-lisp
+(defun my--tangle-byte-compile-org ()
+ "Tangles emacs.org and byte compiles ~/.emacs.d/"
+   (interactive)
+   (when (equal (buffer-name)
+                (concat "init.org"))
+     (org-babel-tangle)
+     (byte-recompile-directory (expand-file-name user-emacs-directory) 0)))
+#+END_SRC
+
+Tangle
+
+#+BEGIN_SRC emacs-lisp
+(defun my--tangle-org ()
+ "Tangles emacs.org and byte compiles ~/.emacs.d/"
+   (interactive)
+   (when (equal (buffer-name)
+                (concat "init.org"))
+     (org-babel-tangle)))
+(add-hook 'after-save-hook #'my--tangle-org)
+#+END_SRC
+
+** Bootstrap straight.el
+*** Install straight.el if not yet
+    #+BEGIN_SRC emacs-lisp
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 5))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+#+END_SRC
+
+*** Install use-package and set it to use straight by default
+    #+BEGIN_SRC emacs-lisp
+(straight-use-package 'use-package)
+(setq straight-use-package-by-default t)
+(straight-use-package 'org-plus-contrib)
+(require 'org-tempo)
+#+END_SRC
+*** Neccessary sane default
+    #+begin_src emacs-lisp
+  (server-mode t)
+  (use-package gcmh
+    :config
+    (gcmh-mode 1))
+  (use-package better-defaults)
+  (setq org-src-window-setup 'split-window-below)
+#+end_src
+
+* Aesthetic
+
+** Theme
+    #+begin_src emacs-lisp
+      (use-package modus-vivendi-theme)
+      (use-package modus-operandi-theme)
+      (load-theme 'modus-vivendi)
+    #+end_src
+
+
+** Smart-mode-line
+    #+begin_src emacs-lisp
+      (use-package smart-mode-line-atom-one-dark-theme)
+      (use-package smart-mode-line
+        :config
+        (setq sml/theme 'respectful)
+        (sml/setup)
+        (add-to-list 'sml/replacer-regexp-list '("^~/Dropbox/" ":dbox:")))
+    #+end_src
+** Rainbow-mode
+    #+begin_src emacs-lisp
+      (use-package rainbow-mode)
+    #+end_src
+* Ivy and counsel bundle
+  #+begin_src emacs-lisp
+    (use-package ivy
+      :config
+      (ivy-mode 1)
+      (setq ivy-use-virtual-buffers t
+            ivy-count-format "(%d/%d) "
+            enable-recursive-minibuffer t
+            ivy-initial-inputs-alist nil))
+    (use-package counsel
+      :config
+      (counsel-mode 1))
+    (use-package avy)
+  #+end_src
+* Autocomplete with company-mode
+  #+begin_src emacs-lisp
+    (use-package company
+      :config
+      (setq company-idle-delay 0.0
+            company-minimum-prefix-length 1)
+      (global-company-mode))
+  #+end_src
+* General
+  #+begin_src emacs-lisp
+    (use-package general)
+  #+end_src
+* Smartparens
+  #+begin_src emacs-lisp
+    (use-package smartparens
+      :general
+      (:keymaps 'smartparens-mode-map
+                "C-M-f" 'sp-forward-sexp 
+                "C-M-b" 'sp-backward-sexp
+                "C-M-a" 'sp-beginning-of-sexp
+                "C-M-e" 'sp-end-of-sexp
+                "C-M-n" 'sp-next-sexp
+                "C-M-p" 'sp-previous-sexp
+                "C-M-t" 'sp-transpose-sexp
+                "C-k" 'sp-kill-hybrid-sexp
+                "C-)" 'sp-forward-slurp-sexp 
+                "C-(" 'sp-backward-slurp-sexp 
+                "M-)" 'sp-forward-barf-sexp 
+                "M-(" 'sp-backward-barf-sexp 
+                "C-S-s" 'sp-splice-sexp
+                "C-M-S-<SPC>" (lambda () (interactive) (mark-sexp -1))
+                "C-M-k" 'sp-kill-sexp
+                "C-M-w" 'sp-copy-sexp
+                "C-M-c" 'sp-clone-sexp
+                "M-<delete>" 'sp-unwrap-sexp
+                "M-<backspace>" 'sp-backward-unwrap-sexp
+                )
+      )
+    (smartparens-global-mode)
+  #+end_src
+
+* Acewindows
+  #+begin_src emacs-lisp
+    (use-package ace-window
+      :init
+      (setq aw-background t
+            aw-dispatch-always t
+            aw-keys '(?a ?r ?s ?t ?d ?h ?n ?e ?i)))
+    (defvar aw-dispatch-alist
+      '((?x aw-delete-window "Delete Window")
+            (?m aw-swap-window "Swap Windows")
+            (?M aw-move-window "Move Window")
+            (?c aw-copy-window "Copy Window")
+            (?j aw-switch-buffer-in-window "Select Buffer")
+            (?l aw-flip-window)
+            (?u aw-switch-buffer-other-window "Switch Buffer Other Window")
+            (?k aw-split-window-fair "Split Fair Window")
+            (?v aw-split-window-vert "Split Vert Window")
+            (?b aw-split-window-horz "Split Horz Window")
+            (?o delete-other-windows "Delete Other Windows")
+            (?? aw-show-dispatch-help))
+      "List of actions for `aw-dispatch-default'.")
+  #+end_src
+* Undo tree
+  #+begin_src emacs-lisp
+    (use-package undo-fu
+      :general
+      (:keymaps 'global-map
+                "C-z" 'undo-fu-only-undo
+                "C-s-z" 'undo-fu-only-redo))
+  #+end_src
+* Magit
+  #+begin_src emacs-lisp
+    (use-package magit)
+  #+end_src
+* Python with lsp-mode
+  #+begin_src emacs-lisp
+    (use-package lsp-mode
+      :commands lsp
+      :hook
+      (lsp-mode . lsp-enable-which-key-integration))
+
+
+    (use-package lsp-pyright
+      :straight (lsp-pyright :type git :host github :repo "emacs-lsp/lsp-pyright")
+      :hook (python-mode . (lambda ()
+                             (require 'lsp-pyright)
+                             (lsp))))
+
+   #+end_src
+* Vterm
+  #+begin_src emacs-lisp
+    (use-package vterm)
+    (use-package vterm-toggle
+      :straight (vterm-toggle :type git :host github :repo "jixiuf/vterm-toggle")
+      :config
+      (setq vterm-toggle-fullscreen-p nil)
+      (add-to-list 'display-buffer-alist
+                   '("^v?term.*"
+                     (display-buffer-reuse-window display-buffer-at-bottom)
+                     (reusable-frames . visible)
+                     (window-height . 0.3)))
+      (define-key vterm-mode-map (kbd "<C-backspace>")
+        (lambda () (interactive) (vterm-send-key (kbd "C-w"))))
+    (advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action)
+      )
+  #+end_src
+* Keybindings
+  #+begin_src emacs-lisp
+    (general-create-definer my-leader-def
+      :prefix "C-c")
+
+    (my-leader-def
+      "b" 'counsel-bookmark
+      "c" 'org-capture
+      )
+
+    (general-define-key
+     "H-s-w" 'switch-to-buffer 
+     "M-o" 'ace-window)
+  #+end_src
