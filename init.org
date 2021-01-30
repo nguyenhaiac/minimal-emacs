@@ -59,12 +59,31 @@ Tangle
 #+END_SRC
 *** Neccessary sane default
     #+begin_src emacs-lisp
-  (server-mode t)
-  (use-package gcmh
-    :config
-    (gcmh-mode 1))
-  (use-package better-defaults)
-  (setq org-src-window-setup 'split-window-below)
+      (server-mode t)
+      (use-package better-defaults)
+      (use-package gcmh
+	:config
+	(gcmh-mode 1))
+      (setq org-src-window-setup 'split-window-below
+	    custom-safe-themes t
+	    )
+      (fset 'yes-or-no-p 'y-or-n-p)
+      (setq-default fringe-indicator-alist (assq-delete-all 'truncation fringe-indicator-alist))
+
+      (global-auto-revert-mode t)
+
+      (setq
+       cursor-in-non-selected-windows t  ; hide the cursor in inactive windows
+       inhibit-splash-screen t
+       echo-keystrokes 0.1               ; show keystrokes right away, don't show the message in the scratch buffe
+       initial-scratch-message nil       ; empty scratch buffer
+       initial-major-mode 'org-mode      ; org mode by default
+       custom-safe-themes t
+       confirm-kill-emacs 'y-or-n-p      ; y and n instead of yes and no when quitting
+       make-backup-files nil
+       auto-save-default nil
+       create-lockfiles nil
+       )
 #+end_src
 
 * Aesthetic
@@ -73,9 +92,13 @@ Tangle
     #+begin_src emacs-lisp
       (use-package modus-vivendi-theme)
       (use-package modus-operandi-theme)
-      (load-theme 'modus-vivendi)
+      (load-theme 'modus-operandi)
     #+end_src
-
+** Font setting
+   #+begin_src emacs-lisp
+     (add-to-list 'default-frame-alist
+                  '(font . "Hack Nerd Font-12"))
+   #+end_src
 
 ** Smart-mode-line
     #+begin_src emacs-lisp
@@ -222,6 +245,17 @@ Tangle
       )
 
     (general-define-key
-     "H-s-w" 'switch-to-buffer 
-     "M-o" 'ace-window)
-  #+end_src
+     "H-b" 'switch-to-buffer 
+     "M-o" 'ace-window
+     "H-." 'next-buffer
+     "H-," 'previous-buffer
+     "H-f" 'counsel-find-file
+     "H-t" 'vterm-toggle
+     "H-u" 'windmove-up
+     "H-e" 'windmove-down
+     "H-n" 'windmove-right
+     "H-i" 'windmove-left
+     "H-F" 'find-file-other-window
+     )
+    
+     #+end_src
