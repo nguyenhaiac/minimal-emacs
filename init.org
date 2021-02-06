@@ -234,6 +234,20 @@ Tangle
     (advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action)
       )
   #+end_src
+* Dired+
+  #+begin_src emacs-lisp
+    (use-package dired+
+      :init
+      (setq diredp-hide-details-initially-flag nil))
+    (add-hook 'dired-before-readin-hook
+              'diredp-breadcrumbs-in-header-line-mode)
+  #+end_src
+* Whichkey
+  #+begin_src emacs-lisp
+    (use-package which-key
+      :config
+      (which-key-mode))
+  #+end_src
 * Keybindings
   #+begin_src emacs-lisp
     (general-create-definer my-leader-def
@@ -253,9 +267,114 @@ Tangle
      "H-t" 'vterm-toggle
      "H-u" 'windmove-up
      "H-e" 'windmove-down
-     "H-n" 'windmove-right
-     "H-i" 'windmove-left
+     "H-n" 'windmove-left
+     "H-i" 'windmove-right
      "H-F" 'find-file-other-window
-     )
+     "H-'" 'org-edit-special
+     "H-d" 'delete-other-windows
+     "H-D" 'delete-window)
     
+    (general-define-key
+     :keymaps 'org-src-mode-map
+     "H-'" 'org-edit-src-exit
+     "H-k" 'org-edit-src-abort)
      #+end_src
+* Email
+  #+begin_src emacs-lisp
+    (use-package mu4e
+      :config
+      ;; This is set to 't' to avoid mail syncing issues when using mbsync
+      (setq mu4e-change-filenames-when-moving t)
+
+      ;; Refresh mail using isync every 10 minutes
+      (setq mu4e-update-interval (* 10 60))
+      (setq mu4e-get-mail-command "mbsync -a")
+      (setq mu4e-maildir "~/Mail")
+
+      (setq mu4e-drafts-folder "/[Gmail]/Drafts")
+      (setq mu4e-sent-folder   "/[Gmail]/Sent Mail")
+      (setq mu4e-refile-folder "/[Gmail]/All Mail")
+      (setq mu4e-trash-folder  "/[Gmail]/Trash")
+
+      (setq mu4e-maildir-shortcuts
+          '(("/Inbox"             . ?i)
+            ("/[Gmail]/Sent Mail" . ?s)
+            ("/[Gmail]/Trash"     . ?t)
+            ("/[Gmail]/Drafts"    . ?d)
+            ("/[Gmail]/All Mail"  . ?a))))
+
+    (setq smtpmail-smtp-server "smtp.gmail.com"
+          smtpmail-smtp-service 465
+          smtpmail-smtp-user "admin@ergomech.store"
+          smtpmail-stream-type  'ssl)
+
+    (setq message-send-mail-function 'smtpmail-send-it)
+
+    (require 'auth-source-pass)
+    (auth-source-pass-enable)
+    (setq auth-source-debug t)
+    (setq auth-source-do-cache nil)
+    (auth-source-pass-get 'secret "admin@ergomech.store")
+    (setq mu4e-contexts
+          (list
+           ;; Work account
+           (make-mu4e-context
+            :name "Work"
+            :match-func
+              (lambda (msg)
+                (when msg
+                  (string-prefix-p "/Gmail" (mu4e-message-field msg :maildir))))
+            :vars '((user-mail-address . "admin@ergomech.store")
+                    (user-full-name    . "ergomech")
+                    (smtpmail-smtp-server  . "smtp.gmail.com")
+                    (smtpmail-smtp-service . 587)
+                    (smtpmail-stream-type  . tls)
+                    (mu4e-drafts-folder  . "/Gmail/[Gmail]/Drafts")
+                    (mu4e-sent-folder  . "/Gmail/[Gmail]/Sent Mail")
+                    (mu4e-refile-folder  . "/Gmail/[Gmail]/All Mail")
+                    (mu4e-trash-folder  . "/Gmail/[Gmail]/Trash")))
+
+           ;; Personal account
+           (make-mu4e-context
+            :name "Personal"
+            :match-func
+              (lambda (msg)
+                (when msg
+                  (string-prefix-p "/Fastmail" (mu4e-message-field msg :maildir))))
+            :vars '((user-mail-address . "systemcrafterstest@fastmail.com")
+                    (user-full-name    . "System Crafters Fastmail")
+                    (smtpmail-smtp-server  . "smtp.fastmail.com")
+                    (smtpmail-smtp-service . 465)
+                    (smtpmail-stream-type  . ssl)
+                    (mu4e-drafts-folder  . "/Fastmail/Drafts")
+                    (mu4e-sent-folder  . "/Fastmail/Sent")
+                    (mu4e-refile-folder  . "/Fastmail/Archive")
+                    (mu4e-trash-folder  . "/Fastmail/Trash")))))
+  #+end_src
+  #+begin_src emacs-lisp
+    (use-package gkroam
+      :init
+      (setq gkroam-root-dir "~/gkroam/org/")
+      (setq gkroam-prettify-page-p t
+            gkroam-show-brackets-p nil
+            gkroam-use-default-filename t
+            gkroam-window-margin 4)
+      :init
+      (gkroam-mode)
+      )
+
+    (general-define-key
+     :keymaps 'gkroam-mode-map
+     "C-c r I" 'gkroam-index
+     "C-c r d" 'gkroam-daily
+     "C-c r D" 'gkroam-delete
+     "C-c r f" 'gkroam-find
+     "C-c r i" 'gkroam-insert
+     "C-c r n" 'gkroam-dwim
+     "C-c r u" 'gkroam-show-unlinked
+     "C-c r p" 'gkroam-toggle-prettify
+     "C-c r t" 'gkroam-toggle-brackets
+     "C-c r R" 'gkroam-rebuild-caches
+     "C-c r g" 'gkroam-update
+     )
+     #+end_sr
