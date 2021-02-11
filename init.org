@@ -272,8 +272,10 @@ Tangle
      "H-F" 'find-file-other-window
      "H-'" 'org-edit-special
      "H-d" 'delete-other-windows
-     "H-D" 'delete-window)
-    
+     "H-D" 'delete-window
+     "C-c c" 'org-roam-capture
+     "C-c d" 'org-roam-dailies-capture-today)
+
     (general-define-key
      :keymaps 'org-src-mode-map
      "H-'" 'org-edit-src-exit
@@ -327,8 +329,8 @@ Tangle
             :vars '((user-mail-address . "admin@ergomech.store")
                     (user-full-name    . "ergomech")
                     (smtpmail-smtp-server  . "smtp.gmail.com")
-                    (smtpmail-smtp-service . 587)
-                    (smtpmail-stream-type  . tls)
+                    (smtpmail-smtp-service . 465)
+                    (smtpmail-stream-type  . ssl)
                     (mu4e-drafts-folder  . "/Gmail/[Gmail]/Drafts")
                     (mu4e-sent-folder  . "/Gmail/[Gmail]/Sent Mail")
                     (mu4e-refile-folder  . "/Gmail/[Gmail]/All Mail")
@@ -350,31 +352,38 @@ Tangle
                     (mu4e-sent-folder  . "/Fastmail/Sent")
                     (mu4e-refile-folder  . "/Fastmail/Archive")
                     (mu4e-trash-folder  . "/Fastmail/Trash")))))
-  #+end_src
-  #+begin_src emacs-lisp
-    (use-package gkroam
-      :init
-      (setq gkroam-root-dir "~/gkroam/org/")
-      (setq gkroam-prettify-page-p t
-            gkroam-show-brackets-p nil
-            gkroam-use-default-filename t
-            gkroam-window-margin 4)
-      :init
-      (gkroam-mode)
-      )
 
-    (general-define-key
-     :keymaps 'gkroam-mode-map
-     "C-c r I" 'gkroam-index
-     "C-c r d" 'gkroam-daily
-     "C-c r D" 'gkroam-delete
-     "C-c r f" 'gkroam-find
-     "C-c r i" 'gkroam-insert
-     "C-c r n" 'gkroam-dwim
-     "C-c r u" 'gkroam-show-unlinked
-     "C-c r p" 'gkroam-toggle-prettify
-     "C-c r t" 'gkroam-toggle-brackets
-     "C-c r R" 'gkroam-rebuild-caches
-     "C-c r g" 'gkroam-update
-     )
-     #+end_sr
+    (add-hook 'mu4e-compose-mode-hook 'turn-off-auto-fill)
+    (add-hook 'mu4e-compose-mode-hook 'visual-line-mode)
+  #+end_src
+  
+  #+begin_src emacs-lisp
+    (use-package org-roam
+          :ensure t
+          :hook
+          (after-init . org-roam-mode)
+          :custom
+          (org-roam-directory "~/roam/")
+          :bind (:map org-roam-mode-map
+                  (("C-c n l" . org-roam)
+                   ("C-c n f" . org-roam-find-file)
+                   ("C-c n g" . org-roam-graph))
+                  :map org-mode-map
+                  (("C-c n i" . org-roam-insert))
+                  (("C-c n I" . org-roam-insert-immediate))))
+
+
+    (setq org-roam-dailies-directory "daily/")
+
+    (setq org-roam-dailies-capture-templates
+          '(("d" "default" entry
+             #'org-roam-capture--get-point
+             "* %?"
+             :file-name "daily/%<%Y-%m-%d>"
+             :head "#+title: %<%Y-%m-%d>\n\n")))
+     #+end_src
+* Beancount
+  #+begin_src emacs-lisp 
+    (use-package beancount
+      :straight (beancount-mode :type git :host github :repo "beancount/beancount-mode"))
+  #+end_src
