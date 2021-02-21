@@ -12,42 +12,42 @@
 Tangle and byte compile
 
 #+BEGIN_SRC emacs-lisp
-(defun my--tangle-byte-compile-org ()
- "Tangles emacs.org and byte compiles ~/.emacs.d/"
-   (interactive)
-   (when (equal (buffer-name)
-                (concat "init.org"))
-     (org-babel-tangle)
-     (byte-recompile-directory (expand-file-name user-emacs-directory) 0)))
+  (defun my--tangle-byte-compile-org ()
+   "Tangles emacs.org and byte compiles ~/.emacs.d/"
+     (interactive)
+     (when (equal (buffer-name)
+                  (concat "init.org"))
+       (org-babel-tangle)
+       (byte-recompile-directory (expand-file-name user-emacs-directory) 0)))
 #+END_SRC
 
 Tangle
 
 #+BEGIN_SRC emacs-lisp
-(defun my--tangle-org ()
- "Tangles emacs.org and byte compiles ~/.emacs.d/"
-   (interactive)
-   (when (equal (buffer-name)
-                (concat "init.org"))
-     (org-babel-tangle)))
-(add-hook 'after-save-hook #'my--tangle-org)
+  (defun my--tangle-org ()
+   "Tangles emacs.org and byte compiles ~/.emacs.d/"
+     (interactive)
+     (when (equal (buffer-name)
+                  (concat "init.org"))
+       (org-babel-tangle)))
+  (add-hook 'after-save-hook #'my--tangle-org)
 #+END_SRC
 
 ** Bootstrap straight.el
 *** Install straight.el if not yet
     #+BEGIN_SRC emacs-lisp
-(defvar bootstrap-version)
-(let ((bootstrap-file
-       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-      (bootstrap-version 5))
-  (unless (file-exists-p bootstrap-file)
-    (with-current-buffer
-        (url-retrieve-synchronously
-         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
-         'silent 'inhibit-cookies)
-      (goto-char (point-max))
-      (eval-print-last-sexp)))
-  (load bootstrap-file nil 'nomessage))
+      (defvar bootstrap-version)
+      (let ((bootstrap-file
+             (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+            (bootstrap-version 5))
+        (unless (file-exists-p bootstrap-file)
+          (with-current-buffer
+              (url-retrieve-synchronously
+               "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+               'silent 'inhibit-cookies)
+            (goto-char (point-max))
+            (eval-print-last-sexp)))
+        (load bootstrap-file nil 'nomessage))
 #+END_SRC
 
 *** Install use-package and set it to use straight by default
@@ -59,14 +59,14 @@ Tangle
 #+END_SRC
 *** Neccessary sane default
     #+begin_src emacs-lisp
-      (server-mode t)
+      (setq tramp-default-method "ssh")
       (use-package better-defaults)
       (use-package gcmh
-	:config
-	(gcmh-mode 1))
+        :config
+        (gcmh-mode 1))
       (setq org-src-window-setup 'split-window-below
-	    custom-safe-themes t
-	    )
+            custom-safe-themes t
+            )
       (fset 'yes-or-no-p 'y-or-n-p)
       (setq-default fringe-indicator-alist (assq-delete-all 'truncation fringe-indicator-alist))
 
@@ -101,7 +101,7 @@ Tangle
    #+end_src
 
 ** Smart-mode-line
-    #+begin_src emacs-lisp
+    #+begin_src emacs-lisp :tangle no
       (use-package smart-mode-line-atom-one-dark-theme)
       (use-package smart-mode-line
         :config
@@ -316,7 +316,7 @@ Tangle
     (auth-source-pass-enable)
     (setq auth-source-debug t)
     (setq auth-source-do-cache nil)
-    (auth-source-pass-get 'secret "admin@ergomech.store")
+    (auth-source-pass-get 'secret "admin@ergomech.store@smtp.gmail.com")
     (setq mu4e-contexts
           (list
            ;; Work account
@@ -386,4 +386,114 @@ Tangle
   #+begin_src emacs-lisp 
     (use-package beancount
       :straight (beancount-mode :type git :host github :repo "beancount/beancount-mode"))
+  #+end_src
+
+* Fish-mode
+  #+begin_src emacs-lisp
+    (use-package fish-mode)
+  #+end_src
+
+* Elfeed
+  #+begin_src emacs-lisp
+            (use-package elfeed
+              :config
+              (setq elfeed-feeds
+                    '(("https://www.youtube.com/feeds/videos.xml?channel_id=UCAiiOTio8Yu69c3XnR7nQBQ" emacs linux)
+                      ("https://www.youtube.com/feeds/videos.xml?channel_id=UCld68syR8Wi-GY_n4CaoJGA" linux)
+                      ("https://www.youtube.com/feeds/videos.xml?channel_id=UCVryWqJ4cSlbTSETBHpBUWw" electronic)
+                      ("https://www.youtube.com/feeds/videos.xml?channel_id=UC6mIxFTvXkWQVEHPsEdflzQ" electronic)
+                      ("https://old.reddit.com/r/selfhosted/.rss" selfhosted reddit))))
+
+            (add-hook 'elfeed-new-entry-hook
+                      (elfeed-make-tagger :feed-url "youtube\\.com"
+                                          :add '(video youtube)))
+
+
+            (setq elfeed-db-directory (expand-file-name "elfeed" user-emacs-directory))
+
+            (defun ambrevar/elfeed-play-with-mpv ()
+              "Play entry link with mpv."
+              (interactive)
+              (let ((entry (if (eq major-mode 'elfeed-show-mode) elfeed-show-entry (elfeed-search-selected :single)))
+                    (quality-arg "")
+                    (quality-val (completing-read "Max height resolution (0 for unlimited): " '("0" "480" "720") nil nil)))
+                (setq quality-val (string-to-number quality-val))
+                (message "Opening %s with height≤%s with mpv..." (elfeed-entry-link entry) quality-val)
+                (when (< 0 quality-val)
+                  (setq quality-arg (format "--ytdl-format=[height<=?%s]" quality-val)))
+                (start-process "elfeed-mpv" nil "mpv" quality-arg (elfeed-entry-link entry))))
+
+            (defun ambrevar/elfeed-open-with-eww ()
+              "Open in eww with `eww-readable'."
+              (interactive)
+              (let ((entry (if (eq major-mode 'elfeed-show-mode) elfeed-show-entry (elfeed-search-selected :single))))
+                (eww  (elfeed-entry-link entry))
+                (add-hook 'eww-after-render-hook 'eww-readable nil t)))
+
+            (defvar ambrevar/elfeed-visit-patterns
+              '(("youtu\\.?be" . ambrevar/elfeed-play-with-mpv)
+                ("phoronix" . ambrevar/elfeed-open-with-eww))
+              "List of (regexps . function) to match against elfeed entry link to know
+            whether how to visit the link.")
+
+            (defun ambrevar/elfeed-visit-maybe-external ()
+              "Visit with external function if entry link matches `ambrevar/elfeed-visit-patterns',
+            visit otherwise."
+              (interactive)
+              (let ((entry (if (eq major-mode 'elfeed-show-mode)
+                               elfeed-show-entry
+                             (elfeed-search-selected :single)))
+                    (patterns ambrevar/elfeed-visit-patterns))
+                (while (and patterns (not (string-match (caar patterns) (elfeed-entry-link entry))))
+                  (setq patterns (cdr patterns)))
+                (cond
+                 (patterns
+                  (funcall (cdar patterns)))
+                 ((eq major-mode 'elfeed-search-mode)
+                  (call-interactively 'elfeed-search-show-entry))
+                 (t (elfeed-show-visit)))))
+
+            (define-key elfeed-search-mode-map "v" #'elfeed-play-in-mpv)
+
+            (defun ambrevar/elfeed-kill-entry ()
+              "Like `elfeed-kill-buffer' but pop elfeed search."
+              (interactive)
+              (elfeed-kill-buffer)
+              (switch-to-buffer "*elfeed-search*"))
+            (define-key elfeed-show-mode-map "q" #'ambrevar/elfeed-kill-entry)
+
+            (defun ambrevar/elfeed-switch-back ()
+              "Back to the last elfeed buffer, entry or search."
+              (interactive)
+              (let ((buffer (get-buffer "*elfeed-entry*")))
+                (if buffer
+                    (switch-to-buffer buffer)
+                  (elfeed))))
+
+  #+end_src
+
+  #+RESULTS:
+  : ambrevar/elfeed-switch-back
+
+  #+begin_src emacs-lisp
+    (use-package selectrum
+      :config
+      (selectrum-mode +1))
+    (use-package selectrum-prescient
+      :config
+      (selectrum-prescient-mode +1)
+      (prescient-persist-mode +1))
+  #+end_src
+
+* Prescient
+  #+begin_src emacs-lisp
+    (use-package ivy-prescient
+      :after counsel
+      :config
+      (ivy-prescient-mode 1))
+  #+end_src
+
+* Virtualenv
+  #+begin_src emacs-lisp
+    (use-package pyvenv)
   #+end_src
